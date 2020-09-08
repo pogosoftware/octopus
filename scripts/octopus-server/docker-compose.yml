@@ -1,0 +1,35 @@
+version: '2.1'
+services:
+  db:
+    image: mcr.microsoft.com/mssql/server:2017-CU20-ubuntu-16.04
+    labels:
+      app: "mssql"
+    environment:
+      SA_PASSWORD: $SA_PASSWORD
+      ACCEPT_EULA: "Y"
+    healthcheck:
+      test: [ "CMD", "/opt/mssql-tools/bin/sqlcmd", "-U", "sa", "-P", "$SA_PASSWORD", "-Q", "select 1"]
+      interval: 10s
+      retries: 10
+    network_mode: "host"
+    restart: always
+
+  octopus-server:
+    image: octopusdeploy/octopusdeploy:2020.3.4
+    labels:
+      app: "octopus"
+    environment:
+      ACCEPT_EULA: "Y"
+      OCTOPUS_SERVER_NODE_NAME: "octopus-server"
+      DB_CONNECTION_STRING: "Server=localhost,1433;Database=Octopus;User=sa;Password=$SA_PASSWORD"
+      ADMIN_USERNAME: "admin"
+      ADMIN_PASSWORD: $ADMIN_PASSWORD
+      ADMIN_EMAIL: "admin@example.com"
+      OCTOPUS_SERVER_BASE64_LICENSE: ""
+      MASTER_KEY: ""
+      ADMIN_API_KEY: ""
+    depends_on:
+      db:
+        condition: service_healthy
+    network_mode: "host"
+    restart: always
